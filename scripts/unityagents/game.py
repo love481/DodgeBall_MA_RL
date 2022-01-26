@@ -7,8 +7,13 @@ if '__main__' == __name__:
     print(dodgeBall.nbr_agent)
     c=np.array([[0,0,1],[0,0,1],[0,0,1]])
     d=np.array([[0,0],[0,0],[0,0]])
+    agent_id=[0,1,2] ##agent_id is the index of the agent in the team
+    team_id=[0,1] ##team_id is the index of the team
     for i in range(100):
-        # dodgeBall.set_action_for_agent(dodgeBall.agent_ids[0],np.array([[1,0,0]]),np.array([[0,1]]))
-        dodgeBall.set_action_for_team(c,d)
-        dodgeBall.set_step()
+        dodgeBall.set_action_for_agent(team_id[1],agent_id[0],np.array([[0.1,0,0]]),np.array([[0,1]]))
+        #dodgeBall.set_action_for_team(team_id[0],c,d)
+        dodgeBall.set_step(team_id[0])
+        print(dodgeBall.get_agent_obs_from_decision_steps(dodgeBall.decision_steps,team_id[0], agent_id[0]))
+        #print(dodgeBall.reward_and_terminalstate_for_agent(team_id[1],agent_id[0]))
+        dodgeBall.env.reset()
     dodgeBall.env_close()

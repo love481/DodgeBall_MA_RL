@@ -10,25 +10,30 @@ class dodgeball_agents:
         self.env=None
         self.nbr_agent=3
         self.spec=None
-        self.agent_ids=[]
         self.agent_obs_size = 512
         self.num_envs = 1
         self.num_time_stacks = 3 #as defined in the build
+        self.decision_steps=None
+        self.terminal_steps=None
+        self.agent_ids=([0, 1, 2],[3, 4, 5])
         
     ##return the environment from the file
     def set_env(self):
         self.env=UnityEnvironment(file_name=self.file_name,worker_id=self.worker_id, seed=self.worker_id, side_channels=self.side_channels)
         self.env.reset()
         self.spec=self.team_spec()
-        decision_steps,terminal_steps = self.env.get_steps(self.get_teamName())
-        self.nbr_agent=len(decision_steps)
-        self.agent_ids=list(decision_steps)
+        self.decision_steps,self.terminal_steps = self.env.get_steps(self.get_teamName())
+        self.nbr_agent=len(self.decision_steps)
+        if self.num_envs > 1:
+            self.agent_ids = ([0, 19, 32],[37, 51, 68]) #(purple, blue) 
+        else:
+            self.agent_ids = ([0, 1, 2],[3, 4, 5])
         return self.env
     
     ##specify the behaviour name for the corresponding team,here in this game id is either 0 or 1
     def get_teamName(self,teamId=0):
         assert teamId in [0,1]
-        return list(self.env.behavior_specs)[1]
+        return list(self.env.behavior_specs)[teamId]
 
     ## define the specification of the observation and actions of the environment
     def team_spec(self):
@@ -47,41 +52,38 @@ class dodgeball_agents:
         self.env.close()
 
     ## move the environment to the next step
-    def set_step(self):
+    def set_step(self,teamId):
         self.env.step()
+        self.decision_steps,self.terminal_steps = self.env.get_steps(self.get_teamName(teamId))
 
-    ## set the action for each agent
-    def set_action_for_agent(self,agentId,act_continuous,act_discrete):
+    ## set the action for each agent of respective team
+    def set_action_for_agent(self,teamId,agentId,act_continuous,act_discrete):
         assert type(act_continuous) == np.ndarray and type(act_discrete) == np.ndarray
         assert act_continuous.shape[1] == self.spec.action_spec.continuous_size and act_continuous.shape[0] == 1 \
                 and act_discrete.shape[1] == self.spec.action_spec.discrete_size and act_discrete.shape[0] == 1
         action_tuple = ActionTuple()
         action_tuple.add_continuous(act_continuous)
         action_tuple.add_discrete(act_discrete)
-        self.env.set_action_for_agent(self.get_teamName(),agentId, action_tuple)
+        self.env.set_action_for_agent(self.get_teamName(teamId),self.agent_ids[teamId][agentId], action_tuple)
 
-    ##set the action for all agents
-    def set_action_for_team(self,act_continuous,act_discrete):
+    ##set the action for all agents of the repective team
+    def set_action_for_team(self,teamId,act_continuous,act_discrete):
         assert type(act_continuous) == np.ndarray and type(act_discrete) == np.ndarray
         assert act_continuous.shape[1] == self.spec.action_spec.continuous_size and act_continuous.shape[0] == self.nbr_agent \
                 and act_discrete.shape[1] == self.spec.action_spec.discrete_size and act_discrete.shape[0] == self.nbr_agent
         action_tuple = ActionTuple()
         action_tuple.add_continuous(act_continuous)
         action_tuple.add_discrete(act_discrete)
-        self.env.set_actions(self.get_teamName(),action_tuple)
+        self.env.set_actions(self.get_teamName(teamId),action_tuple)
       
     
     
     ##returns decision step for single agent from decision steps, team_id (0 or 1) and agent_index(0 or 1 or 2)
-    def get_agent_decision_step(self, decision_steps, team_id, agent_index):
+    def get_agent_decision_step(self,decision_steps, team_id, agent_index):
         assert team_id in [0, 1]
         assert agent_index in range(self.nbr_agent)
         assert type(decision_steps) == DecisionSteps
-        if self.num_envs > 1:
-            agent_ids = ([37, 51, 68], [0, 19, 32]) #(blue, purple) 
-        else:
-            agent_ids = ([3, 4, 5], [0, 1, 2])
-        return decision_steps[agent_ids[team_id][agent_index]]
+        return decision_steps[self.agent_ids[team_id][agent_index]]
         
     
     ##given a decision step corresponding to a particular agent, return the observation as a long 1 dimensional numpy array
@@ -111,13 +113,12 @@ class dodgeball_agents:
         return team_obs
             
     ##returns agent reward and its terminal state    
-    def reward_and_terminalstate_for_agent(self,agentId):
-        decision_steps,terminal_steps = self.env.get_steps(self.get_teamName())
-        if agentId in decision_steps:
-            reward = decision_steps.__getitem__(agentId).reward
+    def reward_and_terminalstate_for_agent(self,team_id,agent_index):
+        if self.agent_ids[team_id][agent_index] in self.decision_steps:
+            reward = self.decision_steps.__getitem__(self.agent_ids[team_id][agent_index]).reward
             done = False
-        if agentId in terminal_steps:
-            reward = terminal_steps.__getitem__(agentId).reward
+        if self.agent_ids[team_id][agent_index] in self.terminal_steps:
+            reward = self.terminal_steps.__getitem__(self.agent_ids[team_id][agent_index]).reward
             done = True
         return reward, done        
 
