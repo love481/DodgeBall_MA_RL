@@ -110,8 +110,17 @@ class dodgeball_agents:
             team_obs[self.agent_obs_size*idx:self.agent_obs_size*(idx+1)] = self.get_agent_obs_from_decision_steps(decision_steps, team_id, idx, num_time_stacks)
         return team_obs
             
-        
-        
+    ##returns agent reward and its terminal state    
+    def reward_and_terminalstate_for_agent(self,agentId):
+        decision_steps,terminal_steps = self.env.get_steps(self.get_teamName())
+        decision_step = decision_steps.__getitem__(agentId)
+        if agentId in decision_step:
+            self.reward = decision_step.agent_id
+        if agentId in terminal_steps:
+            terminal_step = terminal_steps.__getitem__(agentId)
+            self.done = True
+            self.reward = terminal_step.agent_id
+        return self.reward, self.done        
 
             
             
