@@ -155,8 +155,8 @@ class dodgeball_agents:
         return self.get_all_agent_obs()
     
     ##puting the above set_action_for_agent in a convinient way##
-    def set_action_for_agent_(self,teamId,agentInd,action_tuple):
-        self.set_action_for_agent(teamId=teamId,agentId=agentInd,act_continuous=action_tuple.continuous,act_discrete=action_tuple.discrete)
+#     def set_action_for_agent_(self,teamId,agentInd,action_tuple):
+#         self.set_action_for_agent(teamId=teamId,agentId=agentInd,act_continuous=action_tuple.continuous,act_discrete=action_tuple.discrete)
     
     ##get rewards as a list of reward of each agent in the game##
     def get_all_agent_reward(self):
@@ -174,17 +174,31 @@ class dodgeball_agents:
             for agentInd in range(3):
                 dones.append(self.terminal(teamId,agentInd))
         return dones
-    
+  
+    def numpy_list_to_action_tuple_list(self, numpy_list):
+        num_continuous = 3
+        action_tuple_list = []
+        denormalize_param = 10 #for continuous actions, i.e. 1.0 from network  = 10 in env
+        for element in numpy_list:
+            action_tuple_continuous = element[:num_continuous]
+            action_tuple_discrete = np.random.binomial(1, p=element[num_continuous:])
+            action_tuple_list.append([action_tuple_continuous, action_tuple_discrete])
+        return action_tuple_list
 
     ##step equivalent of gym environment##
-    ##expects actions to be the list of action tuples and actiontuple is a namedtuple of continuous and 
-    # discrete actions##
+    ##expects actions to be the list of numpy arrays where each array is of the form
+    ## np.array([0.64, 0.78, 0.56, 0.45, 0.89])
+    ## first three are normalized continuous actions, last 2 are probabilities of performing the corresponding discrete action
+    
     def step(self,actions):
         action_idx = 0
+        actions = numpy_list_to_action_tuple_list(actions)
+
         ##set action for all agents##
         for teamId in range(2):
             for agentInd in range(3):
-                self.set_action_for_agent_(teamId,agentInd,actions[action_idx])
+                action = actions[action_idx]
+                self.set_action_for_agent(teamId,agentInd,action[0], action[1])
                 action_idx += 1
         
         ##step insimulation##
