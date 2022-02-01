@@ -4,13 +4,14 @@ from maddpg.actor_critic import Actor, Critic
 from common.replay_buffer import Buffer
 
 class MADDPG:
-    def __init__(self, args, agent_id):  
+    def __init__(self, args, agent_id,team_id):  
         self.args = args
         self.agent_id = agent_id
         self.train_step = 0
 
         # create the network
         self.actor_network = Actor(args, agent_id)
+        
         self.critic_network = Critic(args)
         # build up the target network
         self.actor_target_network = Actor(args, agent_id)
@@ -33,13 +34,13 @@ class MADDPG:
         if not os.path.exists(self.model_path):
             os.mkdir(self.model_path)
 
-        if os.path.exists(self.model_path + '/actor_params.pkl'):
-            self.actor_network.load_state_dict(torch.load(self.model_path + '/actor_params.pkl'))
-            self.critic_network.load_state_dict(torch.load(self.model_path + '/critic_params.pkl'))
+        if os.path.exists(self.model_path + '/' + ('%d' % team_id) + 'actor_params.pkl'):
+            self.actor_network.load_state_dict(torch.load(self.model_path + '/' + ('%d' % team_id) + 'actor_params.pkl'))
+            self.critic_network.load_state_dict(torch.load(self.model_path + '/' + ('%d' % team_id) + 'critic_params.pkl'))
             print('Agent {} successfully loaded actor_network: {}'.format(self.agent_id,
-                                                                          self.model_path + '/actor_params.pkl'))
+                                                                          self.model_path + '/' + ('%d' % team_id) + 'actor_params.pkl'))
             print('Agent {} successfully loaded critic_network: {}'.format(self.agent_id,
-                                                                           self.model_path + '/critic_params.pkl'))
+                                                                           self.model_path + '/' + ('%d' % team_id) + 'critic_params.pkl'))
 
     # soft update
     def _soft_update_target_network(self):
@@ -49,9 +50,9 @@ class MADDPG:
         for target_param, param in zip(self.critic_target_network.parameters(), self.critic_network.parameters()):
             target_param.data.copy_((1 - self.args.tau) * target_param.data + self.args.tau * param.data)
     # update the network
-    def train(self, experiences, other_agents):
+    def train(self, experiences, other_agents,i):
         for key in experiences.keys():
-            experiences[key] = torch.tensor(experiences[key], dtype=torch.float32)
+            experiences[key] = torch.tensor(experiences[key], dtype=torch.float32).to(self.args.device)
         r = experiences['r_%d' % self.agent_id] 
         o, a, o_next = [], [], []  
         for agent_id in range(self.args.n_agents):
@@ -92,18 +93,18 @@ class MADDPG:
 
         self._soft_update_target_network()
         if self.train_step > 0 and self.train_step % self.args.save_rate == 0:
-            self.save_model(self.train_step)
+            self.save_model(self.train_step,i)
         self.train_step += 1
 
-    def save_model(self, train_step):
-        num = str(train_step // self.args.save_rate)
+    def save_model(self, train_step,i):
+        #num = str(train_step // self.args.save_rate)
         model_path = os.path.join(self.args.save_dir, self.args.scenario_name)
         if not os.path.exists(model_path):
             os.makedirs(model_path)
         model_path = os.path.join(model_path, 'agent_%d' % self.agent_id)
         if not os.path.exists(model_path):
             os.makedirs(model_path)
-        torch.save(self.actor_network.state_dict(), model_path + '/' + num + '_actor_params.pkl')
-        torch.save(self.critic_network.state_dict(),  model_path + '/' + num + '_critic_params.pkl')
+        torch.save(self.actor_network.state_dict(), model_path + '/' + ('%d' % i) + 'actor_params.pkl')
+        torch.save(self.critic_network.state_dict(), model_path + '/' + ('%d' % i) + 'critic_params.pkl')
 
 

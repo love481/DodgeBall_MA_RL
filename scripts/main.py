@@ -7,7 +7,5 @@ if __name__ == '__main__':
     args = get_args()
     env, args = make_env(args)
     runner = Runner(args, env)
-    for i in range(10):
-        returns = runner.evaluate()
-        print('Average returns is', returns)
+    runner.evaluate()
     #runner.run()

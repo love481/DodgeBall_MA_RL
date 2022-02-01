@@ -87,4 +87,5 @@ def make_env(args):
     args.low_action = -1
     args.continuous_action_space = env.spec.action_spec.continuous_size
     args.discrete_action_space = env.spec.action_spec.discrete_size
+    args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return env, args

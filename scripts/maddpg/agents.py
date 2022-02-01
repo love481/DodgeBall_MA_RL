@@ -1,33 +1,33 @@
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.base_env import DecisionSteps, TerminalSteps, ActionTuple,  ActionSpec, BehaviorSpec, DecisionStep
+from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 import numpy as np
 class dodgeball_agents:
     def __init__(self,file_name):
+        # Create the side channel
+        self.engine_config_channel = EngineConfigurationChannel()
         self.file_name = file_name
         self.worker_id = 5
         self.seed = 4
-        self.side_channels = []
+        self.side_channels = [self.engine_config_channel]
         self.env=None
         self.nbr_agent=3
         self.spec=None
         self.agent_obs_size = 512 #356##without stacking##
         self.num_envs = 1
         self.num_time_stacks = 3 #as defined in the build
-        self.decision_steps = []
-        self.terminal_steps = []
+        self.decision_steps = {0:DecisionSteps, 1:DecisionSteps}
+        self.terminal_steps =  {0:TerminalSteps, 1:TerminalSteps}
         self.agent_ids=([0, 1, 2],[3, 4, 5])
         
     ##return the environment from the file
     def set_env(self):
         self.env=UnityEnvironment(file_name=self.file_name,worker_id=self.worker_id, seed=self.worker_id, side_channels=self.side_channels)
+        self.engine_config_channel.set_configuration_parameters(target_frame_rate =1)
         self.env.reset()
         self.spec=self.team_spec() 
-        d0,t0 = self.env.get_steps(self.get_teamName(teamId = 0))
-        d1,t1 = self.env.get_steps(self.get_teamName(teamId = 1))
-        self.decision_steps.insert(0,d0)
-        self.decision_steps.insert(1,d1)
-        self.terminal_steps.insert(0,t0)
-        self.terminal_steps.insert(1,t1)
+        self.decision_steps[0],self.terminal_steps[0] = self.env.get_steps(self.get_teamName(teamId = 0))
+        self.decision_steps[1],self.terminal_steps[1]  = self.env.get_steps(self.get_teamName(teamId = 1))
         assert len(self.decision_steps[0]) == len(self.decision_steps[1])
         self.nbr_agent=len(self.decision_steps[0])
         if self.num_envs > 1:
@@ -59,7 +59,8 @@ class dodgeball_agents:
 
     ## set the action for each agent of respective team
     def set_action_for_agent(self,teamId,agentId,act_continuous,act_discrete):
-        assert self.agent_ids[teamId][agentId] in self.decision_steps[teamId].agent_id 
+        assert self.agent_ids[teamId][agentId] in self.terminal_steps[teamId].agent_id or \
+            self.agent_ids[teamId][agentId] in self.decision_steps[teamId].agent_id
         assert type(act_continuous) == np.ndarray and type(act_discrete) == np.ndarray
         assert act_continuous.shape[1] == self.spec.action_spec.continuous_size and act_continuous.shape[0] == 1 \
                 and act_discrete.shape[1] == self.spec.action_spec.discrete_size and act_discrete.shape[0] == 1
@@ -115,7 +116,7 @@ class dodgeball_agents:
             reward = self.terminal_steps[team_id].__getitem__(self.agent_ids[team_id][agent_index]).reward
             done = True
         return reward,done
-   
+
     ##get all agent obs as a list where each element in the list corresponds to an agent's observation##
     def get_all_agent_obs_rewards_dones(self,teamID=None):
         obs = []
@@ -138,7 +139,7 @@ class dodgeball_agents:
                     obs.append(self.get_agent_obs_from_decision_steps(self.decision_steps[teamID],teamID,agentIndex,1))
                 else:
                     obs.append(self.get_agent_obs_from_decision_steps(self.terminal_steps[teamID],teamID,agentIndex,1))
-                    print("exited yahooo {}".format(self.agent_ids[teamID][agentIndex]))
+                    ##print("exited yahooo {}".format(self.agent_ids[teamID][agentIndex]))
                 rewards.append(reward)
                 dones.append(done)
         return obs,rewards,dones
