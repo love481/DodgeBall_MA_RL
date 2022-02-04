@@ -4,6 +4,8 @@ import functools
 from maddpg.agents import dodgeball_agents
 import torch 
 from enum import Enum
+import random
+import copy
 def store_args(method):
     """Stores provided method args as instance attributes.
     """
@@ -77,15 +79,39 @@ def linear_layer(
     return layer
 
 
+class OUNoise:
+    """Ornstein-Uhlenbeck process."""
+
+    def __init__(self, size, seed, mu=0., theta=0.15, sigma=0.2):
+        """Initialize parameters and noise process."""
+        self.mu = mu * np.ones(size)
+        self.theta = theta
+        self.sigma = sigma
+        self.seed = random.seed(seed)
+        self.reset()
+
+    def reset(self):
+        """Reset the internal state (= noise) to mean (mu)."""
+        self.state = copy.copy(self.mu)
+
+    def sample(self):
+        """Update internal state and return it as a noise sample."""
+        x = self.state
+        dx = self.theta * (self.mu - x) + self.sigma * np.array([random.random() for i in range(len(x))])
+        self.state = x + dx
+        return self.state
+
+
 def make_env(args):
     env = dodgeball_agents("/home/love/Documents/ctfvideo/ctfvideo.x86_64")
     env.set_env()
-    args.n_agents = env.nbr_agent
+    args.n_agents = env.nbr_agent*2
     args.obs_shape = [env.agent_obs_size for i in range(args.n_agents)] 
     args.action_shape =[env.spec.action_spec.discrete_size + env.spec.action_spec.continuous_size for i in range(args.n_agents)] 
-    args.high_action = 1
-    args.low_action = -1
+    args.high_action = 2
+    args.low_action = -2
     args.continuous_action_space = env.spec.action_spec.continuous_size
     args.discrete_action_space = env.spec.action_spec.discrete_size
-    args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    args.seed=10
     return env, args

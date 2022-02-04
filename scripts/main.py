@@ -7,5 +7,8 @@ if __name__ == '__main__':
     args = get_args()
     env, args = make_env(args)
     runner = Runner(args, env)
-    runner.evaluate()
-    #runner.run()
+    # for i in range(100):
+    #     runner.evaluate()
+    #     runner.plot_graph(runner.avg_returns['team_blue'],list(runner.avg_returns.keys())[0])
+    #     runner.plot_graph(runner.avg_returns['team_purple'],list(runner.avg_returns.keys())[1])
+    runner.run()

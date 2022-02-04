@@ -7,9 +7,9 @@ class dodgeball_agents:
         # Create the side channel
         self.engine_config_channel = EngineConfigurationChannel()
         self.file_name = file_name
-        self.worker_id = 5
+        self.worker_id = 6
         self.seed = 4
-        self.side_channels = [self.engine_config_channel]
+        self.side_channels = []
         self.env=None
         self.nbr_agent=3
         self.spec=None
@@ -23,7 +23,7 @@ class dodgeball_agents:
     ##return the environment from the file
     def set_env(self):
         self.env=UnityEnvironment(file_name=self.file_name,worker_id=self.worker_id, seed=self.worker_id, side_channels=self.side_channels)
-        self.engine_config_channel.set_configuration_parameters(target_frame_rate =1)
+        #self.engine_config_channel.set_configuration_parameters(target_frame_rate =1)
         self.env.reset()
         self.spec=self.team_spec() 
         self.decision_steps[0],self.terminal_steps[0] = self.env.get_steps(self.get_teamName(teamId = 0))
@@ -111,38 +111,43 @@ class dodgeball_agents:
              self.agent_ids[team_id][agent_index] in self.terminal_steps[team_id].agent_id
         if self.agent_ids[team_id][agent_index] in self.decision_steps[team_id].agent_id:
             reward = self.decision_steps[team_id].__getitem__(self.agent_ids[team_id][agent_index]).reward
+            grp_reward=self.decision_steps[team_id].__getitem__(self.agent_ids[team_id][agent_index]).group_reward
             done = False
-        if self.agent_ids[team_id][agent_index] in self.terminal_steps[team_id].agent_id:
+        elif self.agent_ids[team_id][agent_index] in self.terminal_steps[team_id].agent_id:
             reward = self.terminal_steps[team_id].__getitem__(self.agent_ids[team_id][agent_index]).reward
+            grp_reward=self.terminal_steps[team_id].__getitem__(self.agent_ids[team_id][agent_index]).group_reward
             done = True
-        return reward,done
+        return reward,grp_reward,done
 
     ##get all agent obs as a list where each element in the list corresponds to an agent's observation##
     def get_all_agent_obs_rewards_dones(self,teamID=None):
         obs = []
         rewards = []
+        grp_rewards = []
         dones = []
         if teamID==None:
             for teamid in range(2):
                 for agentIndex in range(3):
-                    reward,done=self.reward_terminal(teamid,agentIndex)
+                    reward,grp_reward,done=self.reward_terminal(teamid,agentIndex)
                     if done==False:
                         obs.append(self.get_agent_obs_from_decision_steps(self.decision_steps[teamid],teamid,agentIndex,1))
                     else:
                         obs.append(self.get_agent_obs_from_decision_steps(self.terminal_steps[teamid],teamid,agentIndex,1))
                     rewards.append(reward)
+                    grp_rewards.append(grp_reward)
                     dones.append(done)
         else:
             for agentIndex in range(3):
-                reward,done=self.reward_terminal(teamID,agentIndex)
+                reward,grp_reward,done=self.reward_terminal(teamID,agentIndex)
                 if done==False:
                     obs.append(self.get_agent_obs_from_decision_steps(self.decision_steps[teamID],teamID,agentIndex,1))
                 else:
                     obs.append(self.get_agent_obs_from_decision_steps(self.terminal_steps[teamID],teamID,agentIndex,1))
                     ##print("exited yahooo {}".format(self.agent_ids[teamID][agentIndex]))
                 rewards.append(reward)
+                grp_rewards.append(grp_reward)
                 dones.append(done)
-        return obs,rewards,dones
+        return obs,rewards,grp_rewards,dones
 
     ##reset the environment like gym##
     def reset(self,teamID=None):
@@ -176,13 +181,13 @@ class dodgeball_agents:
         if teamId==None:
             self.decision_steps[0],self.terminal_steps[0] = self.env.get_steps(self.get_teamName(0))
             self.decision_steps[1],self.terminal_steps[1] = self.env.get_steps(self.get_teamName(1))
-            next_states,rewards,dones  = self.get_all_agent_obs_rewards_dones()
+            next_states,rewards,grp_rewards,dones  = self.get_all_agent_obs_rewards_dones()
 
         else:
             self.decision_steps[teamId],self.terminal_steps[teamId] = self.env.get_steps(self.get_teamName(teamId))
-            next_states,rewards,dones  = self.get_all_agent_obs_rewards_dones(teamId)
+            next_states,rewards,grp_rewards,dones  = self.get_all_agent_obs_rewards_dones(teamId)
 
-        return next_states,rewards,dones
+        return next_states,rewards,grp_rewards,dones
 
 
     
