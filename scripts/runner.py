@@ -16,10 +16,10 @@ class Runner:
         self.env = env
         self.agents = self._init_agents()
         self.buffer = Buffer(args)
-        self.avg_returns_test={'team_blue':[],'team_purple':[]}
-        self.avg_returns_train={'team_blue':[],'team_purple':[]}
+        self.avg_returns_test={'team_purple':[],'team_blue':[]}
+        self.avg_returns_train={'team_purple':[],'team_blue':[]}
         self.count_ep=0
-        self.scores_deque = {'team_blue':deque(maxlen=5),'team_purple':deque(maxlen=5)}
+        self.scores_deque = {'team_purple':deque(maxlen=5),'team_blue':deque(maxlen=5)}
         self.save_path = self.args.save_dir + '/' + self.args.scenario_name
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
@@ -31,26 +31,40 @@ class Runner:
             agents.append(agent)
         return agents
 
+    def select_action_for_opponent(self,agent_id):
+            a=np.random.uniform(-1,1, self.args.action_shape[agent_id])*0.5
+            #a=np.zeros(self.args.action_shape[agent_id])
+            a[:self.args.continuous_action_space]= self.args.high_action*a[:self.args.continuous_action_space]
+            a[self.args.continuous_action_space:]=(np.abs(a[self.args.continuous_action_space:])>0.2)*1
+            return a
+
     def run(self):
-        returns = {'team_blue':[],'team_purple':[]}
+        returns = {'team_purple':[],'team_blue':[]}
+        n=self.args.n_agents
         for i in range(self.episode_limit+1):
             s,r,gr,d = self.env.reset()
-            # for agent in self.agents:
-            #     agent.noise.reset()
-            rewards = {'team_blue':0,'team_purple':0}
+            for agent in self.agents:
+                agent.noise.reset()
+            rewards = {'team_purple':0,'team_blue':0}
             for time_step in tqdm(range(self.args.time_steps)):
                 a = []
+                a_opponent = []
                 with torch.no_grad():
                     for agent_id, agent in enumerate(self.agents):
                         action = agent.select_action(s[agent_id], self.noise, self.epsilon)
                         a.append(action)
+                        a_opponent.append(self.select_action_for_opponent(agent_id))
+                for j in range(self.args.n_agents):
+                    a.append(a_opponent[j])
                 s_next, r,gr, done= self.env.step(a)
-                r=list((np.array(r))+np.array(gr))
-                rewards['team_blue'] += r[0]+r[1]+r[2]
-                rewards['team_purple'] += r[3]+r[4]+r[5]
-                self.buffer.store_episode(s, a, r, s_next,done)
-                s= s_next
-                if self.buffer.current_size >= self.args.batch_size:
+                r=list((np.array(r)+np.array(gr)))
+                rewards['team_purple'] += np.sum(r[:3])
+                rewards['team_blue'] += np.sum(r[3:])
+                # if (np.sum(r[:3])>0.0001):
+                #     for _ in range(50):
+                self.buffer.store_episode(s[:n], a[:n], r[:n], s_next[:n],done[:n])
+                s = s_next[:n]
+                if self.buffer.current_size >= self.args.batch_size and time_step%self.args.learn_rate==0:
                     experiences = self.buffer.sample(self.args.batch_size)
                     for agent in self.agents:
                         other_agents = self.agents.copy()
@@ -60,52 +74,62 @@ class Runner:
                 #     self.evaluate()
                 #     self.plot_graph( self.avg_returns_test['team_blue'],list( self.avg_returns_test.keys())[0],method='test')
                 #     self.plot_graph( self.avg_returns_test['team_purple'],list( self.avg_returns_test.keys())[1],method='test')
-                self.noise = max(0.05, self.noise - 0.000005)
-                self.epsilon = max(0.05, self.epsilon - 0.000005)
                 if(any(done)==True):
                     break
-            returns['team_blue'].append(rewards['team_blue'])
-            returns['team_purple'].append(rewards['team_purple'])
+            self.noise = max(0.05, self.noise - 0.0001)
+            #self.epsilon = max(0.05, self.epsilon - 0.0001)
+            #returns['team_blue'].append(rewards['team_blue'])
+            #returns['team_purple'].append(rewards['team_purple'])
             self.scores_deque['team_blue'].append(rewards['team_blue'])
             self.scores_deque['team_purple'].append(rewards['team_purple'])
             print('team blue avg Returns is', np.mean(self.scores_deque['team_blue']))
             print('team purple avg Returns is',np.mean(self.scores_deque['team_purple']))  
             self.avg_returns_train['team_blue'].append(np.mean(self.scores_deque['team_blue']))
             self.avg_returns_train['team_purple'].append(np.mean(self.scores_deque['team_purple']))
-            self.count_ep+=1
-        self.plot_graph( self.avg_returns_train['team_blue'],list(self.avg_returns_train.keys())[0],method='train')
-        self.plot_graph(self.avg_returns_train['team_purple'],list(self.avg_returns_train.keys())[1],method='train')
+            self.plot_graph(self.avg_returns_train,method='train')
+            if(np.mean(self.scores_deque['team_purple'])>3 and i >100):
+                break
+        return self.avg_returns_train
     
-    def plot_graph(self,avg_returns,name,method=None):
+    def plot_graph(self,avg_returns,method=None):
         plt.figure()
-        plt.plot(range(len(avg_returns)),avg_returns)
+        # plt.plot(range(len(avg_returns['team_blue'])),avg_returns['team_blue'])
+        plt.plot(range(len(avg_returns['team_purple'])),avg_returns['team_purple'])
         plt.xlabel('episode')
         plt.ylabel('average returns')
+        #plt.legend(["blue_reward","purple_reward"])
         if method=='test':
-            plt.savefig(self.save_path + '/' + name + ('%d' % self.count_ep) + '_test_plt.png' , format='png')
+            plt.savefig(self.save_path + '/' + 'test_plt.png' , format='png')
         else:
-            plt.savefig(self.save_path + '/' + name + ('%d' % self.count_ep) + '_train_plt.png' , format='png')
+            plt.savefig(self.save_path + '/' + 'train_plt.png' , format='png')
            
         # np.save(self.save_path + '/' + name + ('%d' % self.count_ep) + '_team_blue_returns.pkl',self.avg_returns['team_blue'])
         # np.save(self.save_path + '/' + name + ('%d' % self.count_ep) + '_team_purple_returns.pkl',self.avg_returns['team_purple'])
 
     def evaluate(self):
-        returns = {'team_blue':[],'team_purple':[]}
+        n=self.args.n_agents
+        returns = {'team_purple':[],'team_blue':[]}
         for episode in range(self.args.evaluate_episodes):
                     # reset the environment
-            rewards = {'team_blue':0,'team_purple':0}
+            rewards = {'team_purple':0,'team_blue':0}
             s,r,gr,d = self.env.reset()
             for time_step in range(self.args.evaluate_episode_len):
-                actions = []
+                a = []
+                a_opponent = []
                 with torch.no_grad():
                     for agent_id, agent in enumerate(self.agents):
                         action = agent.select_action(s[agent_id],0,0)
-                        actions.append(action)
-                s_next, r,gr, done= self.env.step(actions)
+                        a.append(action)
+                        a_opponent.append(self.select_action_for_opponent(agent_id))
+                        if agent_id==0:
+                            print(s[agent_id])
+                for j in range(self.args.n_agents):
+                    a.append(a_opponent[j])
+                s_next, r,gr, done= self.env.step(a)
                 r=list((np.array(r))+np.array(gr))
-                rewards['team_blue'] += r[0]+r[1]+r[2]
-                rewards['team_purple'] += r[3]+r[4]+r[5]
-                s = s_next
+                rewards['team_purple'] += np.mean(r[:3])
+                rewards['team_blue'] += np.mean(r[3:])
+                s = s_next[:n]
                 if(any(done)==True):
                     break
             returns['team_blue'].append(rewards['team_blue'])

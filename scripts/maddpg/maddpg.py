@@ -3,7 +3,7 @@ import os
 from maddpg.actor_critic import Actor, Critic
 from common.replay_buffer import Buffer
 import torch.nn.functional as F
-
+import csv
 class MADDPG:
     def __init__(self, args, agent_id):  
         self.args = args
@@ -17,7 +17,7 @@ class MADDPG:
         # build up the target network
         self.actor_target_network = Actor(args, agent_id)
         self.critic_target_network = Critic(args)
-
+        self.huber_loss = torch.nn.SmoothL1Loss()
         # load the weights into the target networks
         self.actor_target_network.load_state_dict(self.actor_network.state_dict())
         self.critic_target_network.load_state_dict(self.critic_network.state_dict())
@@ -42,6 +42,12 @@ class MADDPG:
                                                                           self.model_path + '/actor_params.pkl'))
             print('Agent {} successfully loaded critic_network: {}'.format(self.agent_id,
                                                                            self.model_path + '/critic_params.pkl'))
+        for target_param, param in zip(self.actor_target_network.parameters(), self.actor_network.parameters()):
+            target_param.data.copy_(param.data)
+        for target_param, param in zip(self.critic_target_network.parameters(), self.critic_network.parameters()):
+            target_param.data.copy_(param.data)
+        # self.f = open("rewards.txt",'w')
+        # self.writer = csv.writer(self.f)
 
     # soft update
     def _soft_update_target_network(self):
@@ -76,27 +82,32 @@ class MADDPG:
                     a_next.append(other_agents[index].policy.actor_target_network.forward(o_next[agent_id]))
                     a_current.append(other_agents[index].policy.actor_network.forward(o[agent_id]))
                     index += 1
-            q_next = self.critic_target_network.forward(o_next, a_next).detach()
-            target_q = (r.unsqueeze(1) + (self.args.gamma * q_next*(1-done))).detach()
+            q_next = self.critic_target_network.forward(o_next, a_next)
+            target_q = (r.unsqueeze(1) + (self.args.gamma *q_next*(1-done))).detach()
 
         # the q loss
         q_value = self.critic_network.forward(o, a)
-        critic_loss =(target_q - q_value).pow(2).mean()
-
+        critic_loss =self.huber_loss(q_value,target_q)
+        # if self.agent_id==0:
+        #     print("critic loss for agent {} is {}".format(self.agent_id,critic_loss ))
         # the actor loss
-        #a[self.agent_id] = self.actor_network(o[self.agent_id])
         actor_loss = - self.critic_network(o, a_current).mean()
-        # if self.agent_id == 0:
-        #     print('critic_loss is {}, actor_loss is {}'.format(critic_loss, actor_loss))
+        #if self.agent_id==0:
+            #print(" actor_lossfor agent {} is {}".format(self.agent_id, actor_loss))
+        if self.agent_id == 0:
+            print('agent:{} crituc loss: {}, actor_loss: {}'.format(self.agent_id,critic_loss, actor_loss))
         # update the network
         self.actor_optim.zero_grad()
         actor_loss.backward()
+        #torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(),1)
         self.actor_optim.step()
         self.critic_optim.zero_grad()
         critic_loss.backward()
+        #torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(),1)
         self.critic_optim.step()
-
-        self._soft_update_target_network()
+        #self.writer.writerow(self.actor_network.action_out_cont.weight.grad)
+        if self.train_step % 4==0:
+            self._soft_update_target_network()
         if self.train_step > 0 and self.train_step % self.args.save_rate == 0:
             self.save_model(self.train_step)
         self.train_step += 1

@@ -22,6 +22,7 @@ class Buffer:
     # store the episode
     def store_episode(self, o, a, r, o_next,done):
         idxs = self._get_storage_idx(inc=1)  
+        #idxs = self.current_size%self.size
         for i in range(self.args.n_agents):
             with self.lock:
                 self.buffer['o_%d' % i][idxs] = o[i]
@@ -29,6 +30,7 @@ class Buffer:
                 self.buffer['r_%d' % i][idxs] = r[i]
                 self.buffer['o_next_%d' % i][idxs] = o_next[i]
                 self.buffer['done_%d' % i][idxs] = done[i]
+       # self.current_size += 1
     
     # sample the data from the replay buffer
     def sample(self, batch_size):

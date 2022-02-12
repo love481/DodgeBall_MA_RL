@@ -78,6 +78,26 @@ def linear_layer(
     _init_methods[bias_init](layer.bias.data)
     return layer
 
+class GaussianNoise:
+    """Ornstein-Uhlenbeck process."""
+
+    def __init__(self, size, seed, sigma=0.2, decay=0.95):
+        """Initialize parameters and noise process."""
+        self.size = size
+        self.sigma = sigma
+        self.decay = decay
+        self.seed = torch.manual_seed(seed)
+        # self.seed = np.random.seed(seed)
+        self.reset()
+
+    def reset(self):
+        """Reset the internal state (= noise) to mean (mu)."""
+        self.sigma =self.decay*self.sigma
+
+    def sample(self):
+        """Update internal state and return it as a noise sample."""
+        return self.sigma * torch.randn(self.size)
+
 
 class OUNoise:
     """Ornstein-Uhlenbeck process."""
@@ -97,21 +117,21 @@ class OUNoise:
     def sample(self):
         """Update internal state and return it as a noise sample."""
         x = self.state
-        dx = self.theta * (self.mu - x) + self.sigma * np.array([random.random() for i in range(len(x))])
+        dx = self.theta * (self.mu - x) + self.sigma * np.array([np.random.randn() for i in range(len(x))])
         self.state = x + dx
         return self.state
 
 
-def make_env(args):
-    env = dodgeball_agents("/home/love/Documents/ctfvideo/ctfvideo.x86_64")
+def make_env(args,name):
+    env = dodgeball_agents(name)
     env.set_env()
-    args.n_agents = env.nbr_agent*2
+    args.n_agents = env.nbr_agent
     args.obs_shape = [env.agent_obs_size for i in range(args.n_agents)] 
     args.action_shape =[env.spec.action_spec.discrete_size + env.spec.action_spec.continuous_size for i in range(args.n_agents)] 
-    args.high_action = 2
-    args.low_action = -2
+    args.high_action = 5
+    args.low_action = -5
     args.continuous_action_space = env.spec.action_spec.continuous_size
     args.discrete_action_space = env.spec.action_spec.discrete_size
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    args.seed=10
+    args.seed=45
     return env, args

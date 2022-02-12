@@ -7,33 +7,36 @@ class dodgeball_agents:
         # Create the side channel
         self.engine_config_channel = EngineConfigurationChannel()
         self.file_name = file_name
-        self.worker_id = 6
+        self.worker_id = 2
         self.seed = 4
-        self.side_channels = []
+        self.side_channels = [self.engine_config_channel]
         self.env=None
-        self.nbr_agent=3
+        self.nbr_agent=2
         self.spec=None
-        self.agent_obs_size = 512 #356##without stacking##
+        #self.agent_obs_size = 512 #356##without stacking##
+        self.agent_obs_size = 504
         self.num_envs = 1
-        self.num_time_stacks = 3 #as defined in the build
+        #self.num_time_stacks = 3 #as defined in the build
+        self.num_time_stacks = 1
         self.decision_steps = {0:DecisionSteps, 1:DecisionSteps}
         self.terminal_steps =  {0:TerminalSteps, 1:TerminalSteps}
-        self.agent_ids=([0, 1, 2],[3, 4, 5])
+        #self.agent_ids=([0, 1, 2],[3, 4, 5])
+        self.agent_ids=([0, 1],[2, 3])
         
     ##return the environment from the file
     def set_env(self):
         self.env=UnityEnvironment(file_name=self.file_name,worker_id=self.worker_id, seed=self.worker_id, side_channels=self.side_channels)
-        #self.engine_config_channel.set_configuration_parameters(target_frame_rate =1)
+        self.engine_config_channel.set_configuration_parameters(target_frame_rate =50)
         self.env.reset()
         self.spec=self.team_spec() 
         self.decision_steps[0],self.terminal_steps[0] = self.env.get_steps(self.get_teamName(teamId = 0))
         self.decision_steps[1],self.terminal_steps[1]  = self.env.get_steps(self.get_teamName(teamId = 1))
         assert len(self.decision_steps[0]) == len(self.decision_steps[1])
-        self.nbr_agent=len(self.decision_steps[0])
         if self.num_envs > 1:
             self.agent_ids = ([0, 19, 32],[37, 51, 68]) #(purple, blue) 
         else:
-            self.agent_ids = ([0, 1, 2],[3, 4, 5])
+            #self.agent_ids = ([0, 1, 2],[3, 4, 5])
+            self.agent_ids=([0, 1],[2, 3])
     
     ##specify the behaviour name for the corresponding team,here in this game id is either 0 or 1
     def get_teamName(self,teamId=0):
@@ -79,17 +82,33 @@ class dodgeball_agents:
         action_tuple.add_discrete(act_discrete)
         self.env.set_actions(self.get_teamName(teamId),action_tuple)
         
-    
-    ##given a decision step corresponding to a particular agent, return the observation as a long 1 dimensional numpy array
+        ##given a decision step corresponding to a particular agent, return the observation as a long 1 dimensional numpy array
     def get_agent_obs_with_n_stacks(self, decision_step, num_time_stacks=1):
         #TODO: ainitialize with a big enough result instead of repetitive concatenation
         assert num_time_stacks >= 1
         obs = decision_step.obs
-        result = obs[0].reshape((-1,))
-        for i in range(1, len(obs)-1):
-            result = np.concatenate((result, obs[i][:int(obs[i].shape[0]/self.num_time_stacks*num_time_stacks)]))
-        result = np.concatenate((result, obs[-1]))
+        # print(obs[0].shape) ## (246,)
+        # print(obs[1].shape) ## (84,)
+        # print(obs[2].shape) ## (2,8)
+        # print(obs[3].shape) ## (12,)
+        # print(obs[4].shape) ## (20,)
+        # print(obs[5].shape) ## (126,)
+        result = np.concatenate((obs[0],obs[1]))
+        result = np.concatenate((result,obs[2].reshape((-1,))))
+        for i in range(3, 6):
+            result = np.concatenate((result, obs[i]))
+        assert result.shape[0] == 504
         return result
+    ##given a decision step corresponding to a particular agent, return the observation as a long 1 dimensional numpy array
+    # def get_agent_obs_with_n_stacks(self, decision_step, num_time_stacks=1):
+    #     #TODO: ainitialize with a big enough result instead of repetitive concatenation
+    #     assert num_time_stacks >= 1
+    #     obs = decision_step.obs
+    #     result = obs[0].reshape((-1,))
+    #     for i in range(1, len(obs)-1):
+    #         result = np.concatenate((result, obs[i][:int(obs[i].shape[0]/self.num_time_stacks*num_time_stacks)]))
+    #     result = np.concatenate((result, obs[-1]))
+    #     return result
     
 
     ##returns agent observation from team decision_steps
@@ -127,7 +146,7 @@ class dodgeball_agents:
         dones = []
         if teamID==None:
             for teamid in range(2):
-                for agentIndex in range(3):
+                for agentIndex in range(2):
                     reward,grp_reward,done=self.reward_terminal(teamid,agentIndex)
                     if done==False:
                         obs.append(self.get_agent_obs_from_decision_steps(self.decision_steps[teamid],teamid,agentIndex,1))
@@ -137,7 +156,7 @@ class dodgeball_agents:
                     grp_rewards.append(grp_reward)
                     dones.append(done)
         else:
-            for agentIndex in range(3):
+            for agentIndex in range(2):
                 reward,grp_reward,done=self.reward_terminal(teamID,agentIndex)
                 if done==False:
                     obs.append(self.get_agent_obs_from_decision_steps(self.decision_steps[teamID],teamID,agentIndex,1))
@@ -167,12 +186,12 @@ class dodgeball_agents:
         ##set action for all agents##
         if teamId==None:
             for teamid in range(2):
-                for agentInd in range(3):
-                    self.set_action_for_agent(teamid,agentInd,actions[3*teamid+agentInd][:self.spec.action_spec.continuous_size].reshape((1,self.spec.action_spec.continuous_size)) \
-                    ,actions[3*teamid+agentInd][self.spec.action_spec.continuous_size:].reshape((1,self.spec.action_spec.discrete_size)))
+                for agentInd in range(2):
+                    self.set_action_for_agent(teamid,agentInd,actions[2*teamid+agentInd][:self.spec.action_spec.continuous_size].reshape((1,self.spec.action_spec.continuous_size)) \
+                    ,actions[2*teamid+agentInd][self.spec.action_spec.continuous_size:].reshape((1,self.spec.action_spec.discrete_size)))
                 
         else:
-            for agentInd in range(3):
+            for agentInd in range(2):
                 self.set_action_for_agent(teamId,agentInd,actions[agentInd][:self.spec.action_spec.continuous_size].reshape((1,self.spec.action_spec.continuous_size)) \
                     ,actions[agentInd][self.spec.action_spec.continuous_size:].reshape((1,self.spec.action_spec.discrete_size)))
             ##get next_states ,rewards and dones from updated decision and terminal steps##
