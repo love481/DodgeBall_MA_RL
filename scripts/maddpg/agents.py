@@ -6,6 +6,7 @@ class dodgeball_agents:
     def __init__(self,file_name):
         # Create the side channel
         self.engine_config_channel = EngineConfigurationChannel()
+        self.engine_config_channel.set_configuration_parameters(time_scale=1)
         self.file_name = file_name
         self.worker_id = 2
         self.seed = 4
@@ -26,7 +27,6 @@ class dodgeball_agents:
     ##return the environment from the file
     def set_env(self):
         self.env=UnityEnvironment(file_name=self.file_name,worker_id=self.worker_id, seed=self.worker_id, side_channels=self.side_channels)
-        self.engine_config_channel.set_configuration_parameters(target_frame_rate =50)
         self.env.reset()
         self.spec=self.team_spec() 
         self.decision_steps[0],self.terminal_steps[0] = self.env.get_steps(self.get_teamName(teamId = 0))
@@ -146,7 +146,7 @@ class dodgeball_agents:
         dones = []
         if teamID==None:
             for teamid in range(2):
-                for agentIndex in range(2):
+                for agentIndex in range( self.nbr_agent):
                     reward,grp_reward,done=self.reward_terminal(teamid,agentIndex)
                     if done==False:
                         obs.append(self.get_agent_obs_from_decision_steps(self.decision_steps[teamid],teamid,agentIndex,1))
@@ -156,7 +156,7 @@ class dodgeball_agents:
                     grp_rewards.append(grp_reward)
                     dones.append(done)
         else:
-            for agentIndex in range(2):
+            for agentIndex in range( self.nbr_agent):
                 reward,grp_reward,done=self.reward_terminal(teamID,agentIndex)
                 if done==False:
                     obs.append(self.get_agent_obs_from_decision_steps(self.decision_steps[teamID],teamID,agentIndex,1))
@@ -186,12 +186,12 @@ class dodgeball_agents:
         ##set action for all agents##
         if teamId==None:
             for teamid in range(2):
-                for agentInd in range(2):
-                    self.set_action_for_agent(teamid,agentInd,actions[2*teamid+agentInd][:self.spec.action_spec.continuous_size].reshape((1,self.spec.action_spec.continuous_size)) \
-                    ,actions[2*teamid+agentInd][self.spec.action_spec.continuous_size:].reshape((1,self.spec.action_spec.discrete_size)))
+                for agentInd in range( self.nbr_agent):
+                    self.set_action_for_agent(teamid,agentInd,actions[ self.nbr_agent*teamid+agentInd][:self.spec.action_spec.continuous_size].reshape((1,self.spec.action_spec.continuous_size)) \
+                    ,actions[ self.nbr_agent*teamid+agentInd][self.spec.action_spec.continuous_size:].reshape((1,self.spec.action_spec.discrete_size)))
                 
         else:
-            for agentInd in range(2):
+            for agentInd in range( self.nbr_agent):
                 self.set_action_for_agent(teamId,agentInd,actions[agentInd][:self.spec.action_spec.continuous_size].reshape((1,self.spec.action_spec.continuous_size)) \
                     ,actions[agentInd][self.spec.action_spec.continuous_size:].reshape((1,self.spec.action_spec.discrete_size)))
             ##get next_states ,rewards and dones from updated decision and terminal steps##

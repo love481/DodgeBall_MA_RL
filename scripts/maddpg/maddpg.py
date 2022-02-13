@@ -77,10 +77,10 @@ class MADDPG:
             for agent_id in range(self.args.n_agents):
                 if agent_id == self.agent_id:
                     a_next.append(self.actor_target_network.forward(o_next[agent_id]))
-                    a_current.append(self.actor_network.forward(o[agent_id]))
+                    #a_current.append(self.actor_network.forward(o[agent_id]))
                 else:
                     a_next.append(other_agents[index].policy.actor_target_network.forward(o_next[agent_id]))
-                    a_current.append(other_agents[index].policy.actor_network.forward(o[agent_id]))
+                    #a_current.append(other_agents[index].policy.actor_network.forward(o[agent_id]))
                     index += 1
             q_next = self.critic_target_network.forward(o_next, a_next)
             target_q = (r.unsqueeze(1) + (self.args.gamma *q_next*(1-done))).detach()
@@ -91,7 +91,8 @@ class MADDPG:
         # if self.agent_id==0:
         #     print("critic loss for agent {} is {}".format(self.agent_id,critic_loss ))
         # the actor loss
-        actor_loss = - self.critic_network(o, a_current).mean()
+        a[self.agent_id]=self.actor_network.forward(o[self.agent_id])
+        actor_loss = - self.critic_network(o, a).mean()
         #if self.agent_id==0:
             #print(" actor_lossfor agent {} is {}".format(self.agent_id, actor_loss))
         if self.agent_id == 0:

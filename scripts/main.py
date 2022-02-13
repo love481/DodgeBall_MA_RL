@@ -14,9 +14,9 @@ def store_data(filename, data):
 if __name__ == '__main__':
     # get the params
     args = get_args()
-    env, args = make_env(args,"/home/love/Documents/testsimple/small_map_touch_zone.x86_64.x86_64")
+    env, args = make_env(args,"/home/love/Documents/testsimple/small_map_touch_zone.x86_64")
     runner = Runner(args, env)
-    train=True
+    train=False
     if not train:
         runner.evaluate()
         runner.plot_graph(runner.avg_returns_test,method='test')

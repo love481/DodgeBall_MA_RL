@@ -81,7 +81,7 @@ def linear_layer(
 class GaussianNoise:
     """Ornstein-Uhlenbeck process."""
 
-    def __init__(self, size, seed, sigma=0.2, decay=0.95):
+    def __init__(self, size, seed, sigma=0.5, decay=0.95):
         """Initialize parameters and noise process."""
         self.size = size
         self.sigma = sigma
@@ -128,8 +128,8 @@ def make_env(args,name):
     args.n_agents = env.nbr_agent
     args.obs_shape = [env.agent_obs_size for i in range(args.n_agents)] 
     args.action_shape =[env.spec.action_spec.discrete_size + env.spec.action_spec.continuous_size for i in range(args.n_agents)] 
-    args.high_action = 5
-    args.low_action = -5
+    args.high_action = 1
+    args.low_action = -1
     args.continuous_action_space = env.spec.action_spec.continuous_size
     args.discrete_action_space = env.spec.action_spec.discrete_size
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
