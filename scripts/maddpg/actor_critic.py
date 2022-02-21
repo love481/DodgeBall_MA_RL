@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 
-# todo: modify the class to receive hidden layer
+#todo: modify the class to receive hidden layer
 
 def hidden_init(layer):
     fan_in = layer.weight.data.size()[0]
@@ -16,7 +16,7 @@ def hidden_init(layer):
 class Actor(nn.Module):
     """Actor (Policy) Model."""
 
-    def __init__(self,args, agent_id, fc1_units=100, fc2_units=5):
+    def __init__(self,args, agent_id, fc1_units=200, fc2_units=5):
         """Initialize parameters and build model.
         Params
         ======
@@ -29,8 +29,8 @@ class Actor(nn.Module):
         super().__init__()
         self.max_action = args.high_action
         self.agent_id=agent_id
-        self.bn1 = nn.BatchNorm1d(args.obs_shape[agent_id])
-        self.fc1 = nn.Linear(args.obs_shape[agent_id], fc1_units)
+        self.bn1 = nn.BatchNorm1d(args.obs_shape[0])
+        self.fc1 = nn.Linear(args.obs_shape[0], fc1_units)
         self.bn2 = nn.BatchNorm1d(fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.bn3 = nn.BatchNorm1d(fc2_units)
@@ -64,7 +64,7 @@ class Actor(nn.Module):
 class Critic(nn.Module):
     """Critic (Value) Model."""
 
-    def __init__(self,args,fcs1_units=512, fc2_units=512):
+    def __init__(self,args,fcs1_units=512, fc2_units=256):
         """Initialize parameters and build model.
         Params
         ======
@@ -93,6 +93,7 @@ class Critic(nn.Module):
     def forward(self, state, action):
         """Build a critic (value) network that maps (state, action) pairs -> Q-values."""
         state = torch.cat(state, dim=1)
+        state=self.bn1(state)
         xs = F.relu(self.fcs1(state))
         xs = self.bn2(xs)
         action = torch.cat(action, dim=1)
@@ -102,22 +103,22 @@ class Critic(nn.Module):
         x = F.relu(self.fc2(x))
 
         return self.fc3(x)
-# # define the actor network
+# define the actor network
 # class Actor(nn.Module):
 #     def __init__(self, args, agent_id):
 #         super(Actor, self).__init__()
 #         self.max_action = args.high_action
 #         self.fc1 = nn.Linear(args.obs_shape[agent_id], 500)
-#         self.fc2 = nn.Linear(500, 100)
-#         self.action_out_cont = nn.Linear(100, args.continuous_action_space)
-#         self.action_out_disc = nn.Linear(100, args.discrete_action_space)
+#         self.fc2 = nn.Linear(500, 5)
+#         self.action_out_cont = nn.Linear(5, args.continuous_action_space)
+#         self.action_out_disc = nn.Linear(5, args.discrete_action_space)
  
 #         self.to(args.device)
 
 #     def forward(self, x):
 #         x = F.relu(self.fc1(x))
 #         x = F.relu(self.fc2(x))
-#         actions_con = F.tanh(self.action_out_cont(x))
+#         actions_con = torch.tanh(self.action_out_cont(x))
 #         actions_disc =torch.sigmoid(self.action_out_disc(x))
 #         return torch.cat((actions_con, actions_disc),dim=1)
 

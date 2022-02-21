@@ -74,7 +74,7 @@ class MADDPG:
         with torch.no_grad():
            
             index = 0
-            for agent_id in range(self.args.n_agents):
+            for agent_id in range(int(self.args.n_agents)):
                 if agent_id == self.agent_id:
                     a_next.append(self.actor_target_network.forward(o_next[agent_id]))
                     #a_current.append(self.actor_network.forward(o[agent_id]))
@@ -95,8 +95,8 @@ class MADDPG:
         actor_loss = - self.critic_network(o, a).mean()
         #if self.agent_id==0:
             #print(" actor_lossfor agent {} is {}".format(self.agent_id, actor_loss))
-        if self.agent_id == 0:
-            print('agent:{} crituc loss: {}, actor_loss: {}'.format(self.agent_id,critic_loss, actor_loss))
+        # if self.agent_id == 0:
+        #     print('agent:{} crituc loss: {}, actor_loss: {}'.format(self.agent_id,critic_loss, actor_loss))
         # update the network
         self.actor_optim.zero_grad()
         actor_loss.backward()
@@ -107,10 +107,8 @@ class MADDPG:
         #torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(),1)
         self.critic_optim.step()
         #self.writer.writerow(self.actor_network.action_out_cont.weight.grad)
-        if self.train_step % 4==0:
+        if self.train_step % 5==0:
             self._soft_update_target_network()
-        if self.train_step > 0 and self.train_step % self.args.save_rate == 0:
-            self.save_model(self.train_step)
         self.train_step += 1
 
     def save_model(self, train_step):
@@ -123,5 +121,8 @@ class MADDPG:
             os.makedirs(model_path)
         torch.save(self.actor_network.state_dict(), model_path + '/actor_params.pkl')
         torch.save(self.critic_network.state_dict(), model_path + '/critic_params.pkl')
+
+    def get_actor_params(self):
+        return self.actor_network.state_dict()
 
 

@@ -10,13 +10,12 @@ class Agent(nn.Module):
         super().__init__()
         self.args = args
         self.agent_id = agent_id
-        self.policy = MADDPG(args, agent_id)
+        self.policy = MADDPG(args, agent_id)  
         #self.noise = OUNoise(self.args.action_shape[self.agent_id], args.seed)
         #self.noise = GaussianNoise(self.args.action_shape[self.agent_id], seed=45)
 
     def select_action(self, o, noise_rate, epsilon):
-        if 1:
-        # if np.random.uniform() < epsilon:
+        if np.random.uniform() < epsilon or 1:
         #     a= np.random.uniform(-1,1, self.args.action_shape[self.agent_id])
         # else:
             inputs = torch.tensor(o, dtype=torch.float32).unsqueeze(0).to(self.args.device)
@@ -49,7 +48,7 @@ class Agent(nn.Module):
         #a[:self.args.continuous_action_space]= a[:self.args.continuous_action_space]
        # a[2]=0.5*a[2]
         #a[self.args.continuous_action_space:]=np.random.binomial(1,np.abs(a[self.args.continuous_action_space:]))
-        a[self.args.continuous_action_space:]=(a[self.args.continuous_action_space:]>0.3)*1
+        a[self.args.continuous_action_space:]=(np.abs(a[self.args.continuous_action_space:])>0.1)*1
         # if(self.agent_id==0):
         #     print(a)
         return a.copy()
@@ -57,4 +56,10 @@ class Agent(nn.Module):
 
     def learn(self, experiences, other_agents):
         self.policy.train(experiences, other_agents)
+
+    def get_actor_params(self):
+        return self.policy.get_actor_params()
+
+    def load_actor_params(self, state_dict):
+        self.policy.actor_network.load_state_dict(state_dict)
 

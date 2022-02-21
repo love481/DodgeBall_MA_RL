@@ -3,17 +3,18 @@ from mlagents_envs.base_env import DecisionSteps, TerminalSteps, ActionTuple,  A
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 import numpy as np
 class dodgeball_agents:
-    def __init__(self,file_name):
+    def __init__(self,file_name,time_scale, no_graphics):
         # Create the side channel
         self.engine_config_channel = EngineConfigurationChannel()
-        self.engine_config_channel.set_configuration_parameters(time_scale=1)
+        self.engine_config_channel.set_configuration_parameters(time_scale=time_scale)
         self.file_name = file_name
-        self.worker_id = 2
+        self.worker_id = 5
         self.seed = 4
         self.side_channels = [self.engine_config_channel]
         self.env=None
         self.nbr_agent=2
         self.spec=None
+        self.no_graphics = no_graphics
         #self.agent_obs_size = 512 #356##without stacking##
         self.agent_obs_size = 504
         self.num_envs = 1
@@ -99,7 +100,7 @@ class dodgeball_agents:
             result = np.concatenate((result, obs[i]))
         assert result.shape[0] == 504
         return result
-    ##given a decision step corresponding to a particular agent, return the observation as a long 1 dimensional numpy array
+    #given a decision step corresponding to a particular agent, return the observation as a long 1 dimensional numpy array
     # def get_agent_obs_with_n_stacks(self, decision_step, num_time_stacks=1):
     #     #TODO: ainitialize with a big enough result instead of repetitive concatenation
     #     assert num_time_stacks >= 1
