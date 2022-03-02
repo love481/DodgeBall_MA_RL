@@ -8,7 +8,7 @@ class dodgeball_agents:
         self.engine_config_channel = EngineConfigurationChannel()
         self.engine_config_channel.set_configuration_parameters(time_scale=time_scale)
         self.file_name = file_name
-        self.worker_id = 5
+        self.worker_id = 6
         self.seed = 4
         self.side_channels = [self.engine_config_channel]
         self.env=None

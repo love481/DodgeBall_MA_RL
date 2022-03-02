@@ -17,10 +17,11 @@ rf1="rf1/small_map_return_flags.x86_64"
 if __name__ == '__main__':
     # get the params
     args = get_args()
-    args.evaluate = 0
+    args.evaluate = 1
     time_scale = 2 if args.evaluate == True else 50
     no_graphics = False if args.evaluate == True else True
-    env, args = make_env(args,"/home/love/Documents/" + rf,time_scale, no_graphics)
+    env, args = make_env(args,"/home/love/Documents/" +rf,time_scale, no_graphics)
+    #env, args = make_env(args,"/home/love/Downloads/envs/env-1",time_scale, no_graphics)
     runner = Runner(args, env)
     evaluate=args.evaluate
     if evaluate:

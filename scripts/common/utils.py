@@ -81,7 +81,7 @@ def linear_layer(
 class GaussianNoise:
     """Ornstein-Uhlenbeck process."""
 
-    def __init__(self, size, seed, sigma=0.5, decay=0.95):
+    def __init__(self, size, seed, sigma=0.5, decay=0.998):
         """Initialize parameters and noise process."""
         self.size = size
         self.sigma = sigma

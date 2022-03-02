@@ -12,10 +12,11 @@ class Agent(nn.Module):
         self.agent_id = agent_id
         self.policy = MADDPG(args, agent_id)  
         #self.noise = OUNoise(self.args.action_shape[self.agent_id], args.seed)
-        #self.noise = GaussianNoise(self.args.action_shape[self.agent_id], seed=45)
+        self.noise = GaussianNoise(self.args.action_shape[0], seed=45)
 
     def select_action(self, o, noise_rate, epsilon):
-        if np.random.uniform() < epsilon or 1:
+        #if np.random.uniform() < epsilon or 1:
+        if 1:
         #     a= np.random.uniform(-1,1, self.args.action_shape[self.agent_id])
         # else:
             inputs = torch.tensor(o, dtype=torch.float32).unsqueeze(0).to(self.args.device)
@@ -23,13 +24,13 @@ class Agent(nn.Module):
             with torch.no_grad():        
                 pi = self.policy.actor_network(inputs).squeeze(0).detach().to(self.args.device)
             self.policy.actor_network.train()
-            # if noise_rate !=0:
-            #     pi = pi + self.noise.sample()
+            if noise_rate !=0:
+                pi = pi + self.noise.sample()
             a=pi.cpu().numpy()
             # if noise_rate !=0:
             #    a += self.noise.sample()
-            noise = noise_rate * self.args.high_action * np.random.randn(*a.shape)  # gaussian noise
-            a += noise
+            # noise = noise_rate * self.args.high_action * np.random.randn(*a.shape)  # gaussian noise
+            # a += noise
             a = np.clip(a, -1, 1)
             #a=torch.softmax(torch.tensor(a).float().to(self.args.device),dim=0).cpu().numpy()
             # a[self.args.continuous_action_space:]=torch.softmax(torch.tensor(a[self.args.continuous_action_space:]).float().to(self.args.device),dim=0).cpu().numpy()
@@ -48,7 +49,7 @@ class Agent(nn.Module):
         #a[:self.args.continuous_action_space]= a[:self.args.continuous_action_space]
        # a[2]=0.5*a[2]
         #a[self.args.continuous_action_space:]=np.random.binomial(1,np.abs(a[self.args.continuous_action_space:]))
-        a[self.args.continuous_action_space:]=(np.abs(a[self.args.continuous_action_space:])>0.1)*1
+        a[self.args.continuous_action_space:]=(np.abs(a[self.args.continuous_action_space:])>0.3)*1
         # if(self.agent_id==0):
         #     print(a)
         return a.copy()

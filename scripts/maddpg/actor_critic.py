@@ -55,7 +55,7 @@ class Actor(nn.Module):
         x = self.bn3(x)
         actions_con = torch.tanh(self.action_out_cont(x))
         #actions_con.detach().numpy()[:,:2]= self.max_action*actions_con.detach().numpy()[:,:2]
-        actions_disc =torch.sigmoid(self.action_out_disc(x))
+        actions_disc =torch.softmax(self.action_out_disc(x),dim=0)
         # if self.agent_id==0:
         #     print(torch.cat((actions_con, actions_disc),dim=1).cpu().numpy())
         return torch.cat((actions_con, actions_disc),dim=1)
