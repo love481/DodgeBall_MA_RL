@@ -17,7 +17,7 @@ rf1="rf1/small_map_return_flags.x86_64"
 if __name__ == '__main__':
     # get the params
     args = get_args()
-    args.evaluate = 1
+    args.evaluate = 0
     time_scale = 2 if args.evaluate == True else 50
     no_graphics = False if args.evaluate == True else True
     env, args = make_env(args,"/home/love/Documents/" +rf,time_scale, no_graphics)
@@ -29,6 +29,6 @@ if __name__ == '__main__':
             runner.evaluate()
             runner.plot_graph(runner.avg_returns_test,method='test')
     else:
-        train=runner.run()
-        store_data(args.save_dir + '/' + args.scenario_name +'/train_purple.txt',train['team_purple'])
-        store_data(args.save_dir + '/' + args.scenario_name +'/train_blue.txt',train['team_blue'])
+        runner.run()
+        # store_data(args.save_dir + '/' + args.scenario_name +'/train_purple.txt',train['team_purple'])
+        # store_data(args.save_dir + '/' + args.scenario_name +'/train_blue.txt',train['team_blue'])
