@@ -19,7 +19,7 @@ class Runner:
         self.env = env
         self.network_bank = deque(maxlen=self.args.size_netbank)
         self.current_network_bank=[]
-        self.initial_elo=1200
+        self.initial_elo=1000
         self.policy_elos=[self.initial_elo]* (self.args.size_netbank + 1)
         self.opponent_networks = None
         self.snapshot_counter=0
@@ -89,7 +89,8 @@ class Runner:
             for agent in self.agents[0]:
                 agent.noise.reset()
             rewards = {'team_purple':0,'team_blue':0}
-            for time_step in (range(self.args.time_steps)):
+            time_step = 0
+            while True:
                 a = []
                 a_opponent = []
                 with torch.no_grad():
@@ -117,8 +118,22 @@ class Runner:
                         other_agents = self.agents[self.learning_team].copy()
                         other_agents.remove(agent)
                         agent.learn(experiences, other_agents)
-                if(any(done)==True):
+                if(any(done)==True) or time_step==2000:
                     break
+                time_step += 1
+            if rewards['team_purple']>2:
+                result = 1.0
+                purple_win=1
+                blue_win=0
+            elif rewards['team_blue']>2:
+                result = 0.0
+                blue_win=1
+                purple_win=0
+            else:
+                result = 0.5
+                purple_win=0
+                blue_win=0
+            self.compute_elo_rating_changes(self.policy_elos[-1], result)
             self.current_network_bank=[self.agents[self.learning_team][idx].get_actor_params() for idx in range(self.args.n_learning_agents)]
             self.noise = max(0.01, self.noise-((self.args.noise_rate-0.01)/self.episode_limit))
             self.epsilon = max(0.01, self.epsilon - 0.0015)
@@ -128,19 +143,6 @@ class Runner:
             self.elo_deque['team_purple'].append(self.policy_elos[-1])
             self.episode_scores.append(max(rewards['team_blue'],rewards['team_purple']))
             average_score = np.mean(self.episode_scores[episode-min(episode,scores_average_window):episode+1])
-            if rewards['team_purple']>8:
-                result = 1.0
-                purple_win=1
-                blue_win=0
-            elif rewards['team_blue']>8:
-                result = 0.0
-                blue_win=1
-                purple_win=0
-            else:
-                result = 0.5
-                purple_win=0
-                blue_win=0
-            self.compute_elo_rating_changes(self.policy_elos[-1], result)
             rb=float(np.mean(self.scores_deque['team_blue']))
             rp=float(np.mean(self.scores_deque['team_purple']))
             eb=float(np.mean(self.elo_deque['team_blue']))
@@ -152,11 +154,11 @@ class Runner:
             # self.avg_returns_train['team_purple'].append(np.mean(self.scores_deque['team_purple']))
             # self.avg_elo_train['team_blue'].append(np.mean(self.elo_deque['team_blue']))
             # self.avg_elo_train['team_purple'].append(np.mean(self.elo_deque['team_purple']))
-            if episode>0 and episode%5==0:
+            if episode>0 and episode%20==0:
                 self.network_bank.append([self.agents[self.learning_team][idx].get_actor_params() for idx in range(self.args.n_learning_agents)])
                 self.policy_elos[self.snapshot_counter] =  self.policy_elos[-1]
                 self.snapshot_counter = (self.snapshot_counter + 1) % self.args.size_netbank
-            if episode>0 and episode%10==0:
+            if episode>0 and episode%50==0:
                 self.swap_opponent_team()
             # if episode>0 and episode%3==0:
             #     self.learning_team=(not self.learning_team)

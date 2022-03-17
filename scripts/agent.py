@@ -12,8 +12,8 @@ class Agent(nn.Module):
         self.args = args
         self.agent_id = agent_id
         self.policy = MADDPG(args, agent_id)  
-        self.noise = OUNoise(self.args.action_shape[0], args.seed)
-        #self.noise = GaussianNoise(self.args.action_shape[0], seed=89)
+        #self.noise = OUNoise(self.args.action_shape[0], args.seed)
+        self.noise = GaussianNoise(self.args.action_shape[0], seed=8)
         #self.seed = random.seed(89)
 
     def select_action(self, o, noise_rate, epsilon):
@@ -26,11 +26,11 @@ class Agent(nn.Module):
             with torch.no_grad():        
                 pi = self.policy.actor_network(inputs).squeeze(0).detach().to(self.args.device)
             self.policy.actor_network.train()
-            # if noise_rate !=0:
-            #     pi = pi + self.noise.sample()
-            a=pi.cpu().numpy()
             if noise_rate !=0:
-               a += self.noise.sample()
+                pi = pi + self.noise.sample()
+            a=pi.cpu().numpy()
+            # if noise_rate !=0:
+            #    a += self.noise.sample()
             # noise = noise_rate * self.args.high_action * np.random.randn(*a.shape)  # gaussian noise
             # a += noise
             a = np.clip(a, -1, 1)

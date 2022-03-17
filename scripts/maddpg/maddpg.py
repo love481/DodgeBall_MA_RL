@@ -108,7 +108,7 @@ class MADDPG:
         self.critic_optim.step()
         if self.train_step % 5==0:
             self._soft_update_target_network()
-            self.writer.writerow([actor_loss,critic_loss])
+            self.writer.writerow([actor_loss.float(),critic_loss.float()])
         self.train_step += 1
 
     def save_model(self):

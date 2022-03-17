@@ -15,6 +15,8 @@ noise=[]
 avg_episode_len=[]
 avg_elo_blue=[]
 avg_elo_purple=[]
+avg_return_blue=[]
+avg_return_purple=[]
 
 with open('returns.txt', 'r') as datafile:
     plotting = csv.reader(datafile)
@@ -37,60 +39,41 @@ eps = range(1,n_eps+1)
  
 plt.figure()
 plt.plot(eps,blue_returns, color="blue")
+plt.plot(eps,purple_returns, color="orange")
 plt.xlabel('episodes')
-plt.ylabel('avg returns')
-plt.legend(['blue team return'])
-plt.savefig('blue_team_return.png')
+plt.ylabel('rewards')
+plt.legend(['blue_team','purple_team'])
+plt.savefig('team_reward.png')
+
 
 plt.figure()
-plt.plot(eps,purple_returns, color="purple")
-plt.xlabel('episodes')
-plt.ylabel('avg returns')
-plt.legend(['purple team return'])
-plt.savefig('purple_team_return.png')
-
-plt.figure()
-plt.plot(eps,blue_ratings, color="blue")
 for i in range(1,n_eps+1):
-    avg_elo_blue.append(np.mean(blue_ratings[i-min(i,100):i+1]))
-plt.plot(eps,avg_elo_blue, color="orange")
-plt.xlabel('episodes')
-plt.ylabel('elo ratings')
-plt.legend(['blue team rating'])
-plt.savefig('blue_team_rating.png')
-
-plt.figure()
-plt.plot(eps,purple_ratings, color="purple")
-for i in range(1,n_eps+1):
-    avg_elo_purple.append(np.mean(purple_ratings[i-min(i,100):i+1]))
+    avg_elo_blue.append(np.mean(blue_ratings[i-min(i,200):i+1]))
+    avg_elo_purple.append(np.mean(purple_ratings[i-min(i,200):i+1]))
+plt.plot(eps,avg_elo_blue, color="blue")
 plt.plot(eps,avg_elo_purple, color="orange")
 plt.xlabel('episodes')
-plt.ylabel('elo ratings')
-plt.legend(['purple team rating'])
-plt.savefig('purple_team_rating.png')
+plt.ylabel('elo_ratings')
+plt.legend(['blue_team','purple_team'])
+plt.savefig('team_rating.png')
 
 plt.figure()
-plt.step(eps,np.cumsum(blue_win), color="blue", where='mid')
-plt.xlabel('episodes')
-plt.ylabel('win')
-plt.legend(['blue team win'])
-plt.savefig('blue_team_win.png')
+team=['team_blue','team_purple']
+plt.bar(team,[np.sum(blue_win),np.sum(purple_win)], color='blue')
+plt.bar(team,[np.sum(1-np.array(blue_win)),np.sum(1-np.array(purple_win))],bottom=[np.sum(blue_win),np.sum(purple_win)], color='orange')
+plt.legend(['win','loss'])
+plt.savefig('win_loss.png')
+
 
 plt.figure()
-plt.step(eps,np.cumsum(purple_win), color="purple", where='mid')
+plt.plot(eps,returns, color="orange",lw=2, alpha=0.1, label="Lighten")
+avg_returns_cal=[]
+for i in range(1,n_eps+1):
+    avg_returns_cal.append(np.mean(returns[i-min(i,100):i+1]))
+plt.plot(eps,avg_returns_cal, color="orange")
 plt.xlabel('episodes')
-plt.ylabel('win')
-plt.legend(['purple team win'])
-plt.savefig('purple_team_win.png')
-
-plt.figure()
-plt.plot(eps,returns, color="blue")
-plt.plot(eps,avg_returns, color="orange")
-plt.xlabel('episodes')
-plt.ylabel('returns')
-plt.legend(['returns','avg_returns'])
-plt.savefig('returns.png')
-
+plt.ylabel('game_rewards')
+plt.savefig('game_rewards.png')
 
 plt.figure()
 plt.plot(eps,noise, color="orange")
@@ -99,7 +82,7 @@ plt.ylabel('noise_rate')
 plt.savefig('noise_rate.png')
 
 plt.figure()
-plt.plot(eps, episode_len, color="blue")
+plt.plot(eps, episode_len, color="orange",lw=2, alpha=0.1, label="Lighten")
 for i in range(1,n_eps+1):
     avg_episode_len.append(np.mean(episode_len[i-min(i,100):i+1]))
 plt.plot(eps,avg_episode_len, color="orange")
@@ -109,28 +92,57 @@ plt.savefig('episode_len.png')
 
 
 # actor_loss1=[]
+# mean_actor_loss1=[]
 # critic_loss1=[]
+# mean_critic_loss1=[]
 # actor_loss2=[]
+# mean_actor_loss2=[]
 # critic_loss2=[]
+# mean_critic_loss2=[]
 # with open('loss_for_agent0.txt', 'r') as datafile:
 #     plotting = csv.reader(datafile)
     
 #     for ROW in plotting:
-#         actor_loss1.append(ROW[0].float().cpu().numpy())
-#         #critic_loss1.append(float(ROW[1].cpu().numpy()))
+#         actor_loss1.append(float(ROW[0]))
+#         critic_loss1.append(float(ROW[1]))
 
-# # with open('loss_for_agent1.txt', 'r') as datafile:
-# #     plotting = csv.reader(datafile)
+# with open('loss_for_agent1.txt', 'r') as datafile:
+#     plotting = csv.reader(datafile)
     
-# #     for ROW in plotting:
-# #         actor_loss2.append(float(ROW[0].cpu().numpy()))
-# #         critic_loss2.append(float(ROW[1].cpu().numpy()))
+#     for ROW in plotting:
+#         actor_loss2.append(float(ROW[0]))
+#         critic_loss2.append(float(ROW[1]))
 
 # n_eps = len(actor_loss1)
 # eps = range(1,n_eps+1)
 # plt.figure()
-# plt.plot(eps,actor_loss1, color="blue")
+# for i in range(1,n_eps+1):
+#     mean_actor_loss1.append(np.mean(actor_loss1[i-min(i,100):i+1]))
+# plt.plot(eps,mean_actor_loss1, color="orange")
 # plt.xlabel('episodes')
-# plt.ylabel('actor_loss1')
-# plt.legend(['actor_loss1'])
+# plt.ylabel('actor_loss')
 # plt.savefig('actor_loss1.png')
+
+# plt.figure()
+# for i in range(1,n_eps+1):
+#     mean_critic_loss1.append(np.mean(critic_loss1[i-min(i,200):i+1]))
+# plt.plot(eps,mean_critic_loss1, color="orange")
+# plt.xlabel('episodes')
+# plt.ylabel('critic_loss')
+# plt.savefig('critic_loss1.png')
+
+# plt.figure()
+# for i in range(1,n_eps+1):
+#     mean_actor_loss2.append(np.mean(actor_loss2[i-min(i,100):i+1]))
+# plt.plot(eps,mean_actor_loss2, color="orange")
+# plt.xlabel('episodes')
+# plt.ylabel('actor_loss')
+# plt.savefig('actor_loss2.png')
+
+# plt.figure()
+# for i in range(1,n_eps+1):
+#     mean_critic_loss2.append(np.mean(critic_loss2[i-min(i,200):i+1]))
+# plt.plot(eps,mean_critic_loss2, color="orange")
+# plt.xlabel('episodes')
+# plt.ylabel('critic_loss')
+# plt.savefig('critic_loss2.png')

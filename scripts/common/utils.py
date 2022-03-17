@@ -81,7 +81,7 @@ def linear_layer(
 class GaussianNoise:
     """Ornstein-Uhlenbeck process."""
 
-    def __init__(self, size, seed, sigma=0.5, decay=0.9986):
+    def __init__(self, size, seed, sigma=0.50, decay=0.9982):
         """Initialize parameters and noise process."""
         self.size = size
         self.sigma = sigma
@@ -92,7 +92,7 @@ class GaussianNoise:
 
     def reset(self):
         """Reset the internal state (= noise) to mean (mu)."""
-        self.sigma =self.decay*self.sigma
+        self.sigma = max(self.decay*self.sigma,0.02)
 
     def sample(self):
         """Update internal state and return it as a noise sample."""
@@ -102,7 +102,7 @@ class GaussianNoise:
 class OUNoise:
     """Ornstein-Uhlenbeck process."""
 
-    def __init__(self, size, seed, mu=0.0, theta=0.1, sigma=0.5, sigma_min = 0.05, sigma_decay=0.9985):
+    def __init__(self, size, seed, mu=0.0, theta=0.01, sigma=0.2356, sigma_min = 0.05, sigma_decay=0.9965):
         """Initialize parameters and noise process."""
         self.mu = mu * np.ones(size)
         self.theta = theta
