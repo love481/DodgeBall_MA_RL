@@ -5,14 +5,16 @@ import os
 from maddpg.maddpg import MADDPG
 from mlagents_envs.base_env import DecisionSteps, TerminalSteps, ActionTuple
 from common.utils import OUNoise,GaussianNoise
+import random
 class Agent(nn.Module):
     def __init__(self, agent_id, args):
         super().__init__()
         self.args = args
         self.agent_id = agent_id
         self.policy = MADDPG(args, agent_id)  
-        #self.noise = OUNoise(self.args.action_shape[self.agent_id], args.seed)
-        self.noise = GaussianNoise(self.args.action_shape[0], seed=45)
+        #self.noise = OUNoise(self.args.action_shape[0], args.seed)
+        self.noise = GaussianNoise(self.args.action_shape[0], seed=8)
+        #self.seed = random.seed(89)
 
     def select_action(self, o, noise_rate, epsilon):
         #if np.random.uniform() < epsilon or 1:

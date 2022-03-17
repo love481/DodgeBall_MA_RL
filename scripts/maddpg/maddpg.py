@@ -46,8 +46,8 @@ class MADDPG:
             target_param.data.copy_(param.data)
         for target_param, param in zip(self.critic_target_network.parameters(), self.critic_network.parameters()):
             target_param.data.copy_(param.data)
-        # self.f = open("rewards.txt",'w')
-        # self.writer = csv.writer(self.f)
+        self.f = open("loss_for_agent"+str(self.agent_id)+".txt",'a')
+        self.writer = csv.writer(self.f)
 
     # soft update
     def _soft_update_target_network(self):
@@ -106,13 +106,12 @@ class MADDPG:
         critic_loss.backward()
         #torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(),1)
         self.critic_optim.step()
-        #self.writer.writerow(self.actor_network.action_out_cont.weight.grad)
         if self.train_step % 5==0:
             self._soft_update_target_network()
+            self.writer.writerow([actor_loss.float(),critic_loss.float()])
         self.train_step += 1
 
-    def save_model(self, train_step):
-        #num = str(train_step // self.args.save_rate)
+    def save_model(self):
         model_path = os.path.join(self.args.save_dir, self.args.scenario_name)
         if not os.path.exists(model_path):
             os.makedirs(model_path)

@@ -2,15 +2,45 @@ from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.base_env import DecisionSteps, TerminalSteps, ActionTuple,  ActionSpec, BehaviorSpec, DecisionStep
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 import numpy as np
+from mlagents_envs.side_channel.side_channel import (
+    SideChannel,
+    IncomingMessage,
+    OutgoingMessage,
+)
+import numpy as np
+import uuid
+
+
+# Create the StringLogChannel class
+class StringLogChannel(SideChannel):
+
+    def __init__(self) -> None:
+        super().__init__(uuid.UUID("a1d8f7b7-cec8-50f9-b78b-d3e165a78520"))
+
+    def on_message_received(self, msg: IncomingMessage) -> None:
+        """
+        Note: We must implement this method of the SideChannel interface to
+        receive messages from Unityno_graphics=self.no_graphics
+        """
+        # We simply read a string from the message and print it.
+        pass
+
+    def send_string(self, data: str) -> None:
+        # Add the string to an OutgoingMessage
+        pass
+    
+string_log = StringLogChannel()
+
+
 class dodgeball_agents:
     def __init__(self,file_name,time_scale, no_graphics):
         # Create the side channel
         self.engine_config_channel = EngineConfigurationChannel()
         self.engine_config_channel.set_configuration_parameters(time_scale=time_scale)
         self.file_name = file_name
-        self.worker_id = 6
+        self.worker_id = 5
         self.seed = 4
-        self.side_channels = [self.engine_config_channel]
+        self.side_channels = [string_log, self.engine_config_channel]
         self.env=None
         self.nbr_agent=2
         self.spec=None
@@ -217,5 +247,4 @@ class dodgeball_agents:
             
             
         
-
 
