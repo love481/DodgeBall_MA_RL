@@ -20,12 +20,12 @@ https://user-images.githubusercontent.com/54012619/168807315-bf5ccde2-d5ca-443a-
 Run this command on command prompt to clone the repository
 
 
-git clone https://github.com/love481/DodgeBall_MA_RL.git
+`git clone https://github.com/love481/DodgeBall_MA_RL.git`
 
 ## Running code
 To train or evaluate the models run on command line
 
-python main.py
+`python main.py`
 
 ## Code Structure
 * `\scripts\main.py` --> To start training or testing of models.Use evaluate == false to start training else evaluating.
