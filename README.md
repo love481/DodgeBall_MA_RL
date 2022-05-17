@@ -41,10 +41,10 @@ To train or evaluate the models run on command line
 
 
 ## Results
-# Training
+Training
 ![image](https://user-images.githubusercontent.com/54012619/168816662-f9380d53-548f-42aa-a61d-6ac65e92667b.png)
 
-# Testing
+Testing
 ![image](https://user-images.githubusercontent.com/54012619/168816416-d5573749-34bc-471f-95cc-cf1b519cac10.png)
 
 ## Contact Information
