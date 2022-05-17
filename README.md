@@ -24,7 +24,9 @@ Run this command on command prompt to clone the repository
 
 ## Running code
 To train or evaluate the models run on command line
+
 `cd scripts`
+
 `python main.py`
 
 ## Code Structure
