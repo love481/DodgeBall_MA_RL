@@ -5,7 +5,7 @@ Multi-Agent Deep Deterministic Policy Gradient (MADDPG) algorithm is implemented
 This is the sample Reinforcement Learning project which uses MADDPG(Multi-agent deep deterministic policy gradient) algorithm to learn competitive behaviour in the given unity environment.The agents were trained based on curriculum learning approach along with self-play to improve its performance.
 The main aim of the both teams is to return the opponent flag to its base zone while throwing ball to the opponent to maximize its reward objectives.For more info visit [documentation](https://github.com/love481/DodgeBall_MA_RL/blob/1b5be765bf176dfee7ba35f6a55d8bd9ee6343bc/final_report.pdf).
 
-https://user-images.githubusercontent.com/54012619/168807315-bf5ccde2-d5ca-443a-b3d6-317b4c645dcb.mp4
+![alt text](demo.mp4)
 
 ## Requirements:
 * Python >= 3.8.10
