@@ -1,8 +1,9 @@
 # MADDPG PYTORCH Implementation
 Multi-Agent Deep Deterministic Policy Gradient (MADDPG) algorithm is implemented in pytorch via Unity ML-Agents Toolkit. Link to the paper https://arxiv.org/pdf/1706.02275.pdf
+The 3d environment is based on the modification for the two agents from our baseline environment in the following [link](https://github.com/Unity-Technologies/ml-agents-dodgeball-env). We appreciate them for building such an amazing 3D environment for multi-agent RL tasks.
 
 ## Project Description
-This is the sample Reinforcement Learning project which uses MADDPG(Multi-agent deep deterministic policy gradient) algorithm to learn competitive behaviour in the given unity environment.The agents were trained based on curriculum learning approach along with self-play to improve its performance.
+This is the sample Reinforcement Learning project which uses MADDPG(Multi-agent deep deterministic policy gradient) algorithm to learn competitive behaviour in the given unity environment. The agents were trained based on curriculum learning approach along with self-play to improve its performance.
 The main aim of the both teams is to return the opponent flag to its base zone while throwing ball to the opponent to maximize its reward objectives.For more info visit [documentation](https://github.com/love481/DodgeBall_MA_RL/blob/1b5be765bf176dfee7ba35f6a55d8bd9ee6343bc/final_report.pdf).
 
 
