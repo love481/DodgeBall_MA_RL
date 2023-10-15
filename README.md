@@ -1,5 +1,5 @@
 # MADDPG PYTORCH Implementation
-Multi-Agent Deep Deterministic Policy Gradient (MADDPG) algorithm is implemented in pytorch via Unity ML-Agents Toolkit. Link to the paper https://arxiv.org/pdf/1706.02275.pdf
+Multi-Agent Deep Deterministic Policy Gradient (MADDPG) algorithm is implemented in pytorch via Unity ML-Agents Toolkit. Link to the paper https://arxiv.org/pdf/1706.02275.pdf.
 The 3d environment is based on the modification for the two agents from our baseline environment in the following [link](https://github.com/Unity-Technologies/ml-agents-dodgeball-env). We appreciate them for building such an amazing 3D environment for multi-agent RL tasks.
 
 ## Project Description
